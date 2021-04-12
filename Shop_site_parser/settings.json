@@ -1,0 +1,14 @@
+{
+  "Bot": {
+    "token": "1738043555:AAENwMJ63WjMNMrCDTYRTjyBCsWuW9DU-ic"
+  },
+  "Shop": {
+    "Avito": {
+      "shopName": "Avito",
+      "isEnable": true,
+      "link": "https://www.avito.ru/obninsk/avtomobili/s_probegom?localPriority=1&radius=0",
+      "chatId": -543439119
+    }
+  }
+
+}
