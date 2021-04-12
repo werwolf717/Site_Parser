@@ -2,7 +2,6 @@
 {
     interface IShop
     {
-        void ParseSite();
-        bool GetCurrentOffer();
+        void ParseSiteAsync();
     }
 }

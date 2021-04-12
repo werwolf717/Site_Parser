@@ -25,7 +25,7 @@ namespace Shop_site_parser
             {
                 Settings cSettings = new Settings();
                 AvitoShop cParsAevito = new AvitoShop(cSettings.getShopSettings("Avito"), cSettings.getBotToken());
-                cParsAevito.ParseSite();
+                cParsAevito.ParseSiteAsync();
             }
             catch (Exception ex)
             {
@@ -34,7 +34,6 @@ namespace Shop_site_parser
 
             Console.WriteLine("Press eny key to exit");
             Console.ReadKey();
-
             Environment.Exit(0);
         }
     }

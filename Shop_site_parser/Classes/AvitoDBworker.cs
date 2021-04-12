@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SQLite;
 using Shop_site_parser.Interfaces;
 using Shop_site_parser.Model;
@@ -17,20 +14,30 @@ namespace Shop_site_parser.Classes
 
         public AvitoDBworker(string _data_source)
         {
-            data_source = _data_source;
-            database = new SQLiteConnection("TestShopDB.db");
-
-            lock (locker)
+            try
             {
-                if (database.ExecuteScalar<string>("SELECT name FROM sqlite_master WHERE type='table' AND name='Avito';") == null)
-                    database.CreateTable<AvitoDBModel>();
-                else
-                    Console.WriteLine("Connect to database");
+
+                data_source = _data_source;
+                database = new SQLiteConnection("TestShopDB.db");
+
+                lock (locker)
+                {
+                    // проверяем наличие нужной БД, если нет - создаем
+                    if (database.ExecuteScalar<string>("SELECT name FROM sqlite_master WHERE type='table' AND name='Avito';") == null)
+                        database.CreateTable<AvitoDBModel>();
+                    else
+                        Console.WriteLine("Connect to database");
+                }
+            }
+            catch
+            {
+                throw new Exception("Can't pDB init");
             }
         }
 
         public int WriteItem(AvitoDBModel _newItem)
         {
+
             lock(locker)
             {
                 return database.Insert(_newItem);

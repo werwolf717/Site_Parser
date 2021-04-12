@@ -13,9 +13,16 @@ namespace Shop_site_parser.Classes
 
         public  TelegramBot(string _token)
         {
-            token = _token;
-            Bot = new TelegramBotClient(token);
-            Bot.SetWebhookAsync("");
+            try
+            {
+                token = _token;
+                Bot = new TelegramBotClient(token);
+                Bot.SetWebhookAsync("");
+            }
+            catch
+            {
+                throw new Exception("Can't bot initializating");
+            }
         }
 
         public void setChatId(long _chat_id)

@@ -29,7 +29,14 @@ namespace Shop_site_parser.Classes
 
         public ShopModel getShopSettings(string _shopName)
         {
-            return mSettings.Shop[_shopName];
+            try
+            {
+                return mSettings.Shop[_shopName];
+            }
+            catch
+            {
+                throw new Exception("Can't fint section " + _shopName + " in settings");
+            }
         }
     }
 }

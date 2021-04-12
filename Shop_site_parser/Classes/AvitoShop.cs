@@ -2,10 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using AngleSharp.Html.Parser;
 using AngleSharp;
 using Shop_site_parser.Model;
 
@@ -20,64 +16,87 @@ namespace Shop_site_parser.Classes
 
         public AvitoShop(ShopModel _cModel, string _token)
         {
-            cModel = _cModel;
-            dbWorker = new AvitoDBworker(_cModel.dbName);
-            cBot = new TelegramBot(_token);
-        }
-        public bool GetCurrentOffer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public async void ParseSite()
-        {
-            db_dataList = dbWorker.GetDataList();
-
-            var document = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link);
-            var result_count = Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent);
-
-            int parce_counter = 0;
-            int page_counter = 1;
-
-            while (parce_counter < result_count)
+            try
             {
-                Console.WriteLine("Page: " + page_counter + "...");
-                var page_documet = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link + "&p=" + page_counter);
+                cModel = _cModel;
+                dbWorker = new AvitoDBworker(_cModel.dbName);
+                cBot = new TelegramBot(_token);
+            }
+            catch
+            {
+                throw new Exception("Can't Avito parser initializating");
+            }
+        }
 
-                var item_list = page_documet.QuerySelector("div[data-marker='catalog-serp']").Children
-                .Where(s => s.GetAttribute("data-marker") == "item").ToList();
+        public async void ParseSiteAsync()
+        {
+            try
+            {
+                db_dataList = dbWorker.GetDataList();
 
-                foreach (var item in item_list)
+                var document = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link);
+                var result_count = (document.QuerySelector("span[data-marker='page-title/count']") != null)
+                                    ? Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent) : 0;
+
+                int parce_counter = 0;
+                int page_counter = 1;
+
+                while (parce_counter < result_count)
                 {
-                    int item_id = Convert.ToInt32(item.GetAttribute("data-item-id"));
-                    string link = item.QuerySelector("a[itemprop='url']").GetAttribute("href");
+                    Console.WriteLine("Page: " + page_counter + "...");
+                    var page_documet = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link + "&p=" + page_counter);
 
-                    if (!db_dataList.Any(it => it.product_id == item_id))
+                    var item_list = (page_documet.QuerySelector("div[data-marker='catalog-serp']") != null) ? page_documet.QuerySelector("div[data-marker='catalog-serp']").Children
+                    .Where(s => s.GetAttribute("data-marker") == "item").ToList() : null;
+
+                    if (item_list == null)
                     {
-                        AvitoDBModel newItem = new AvitoDBModel();
-                        newItem.link = link;
-                        newItem.product_id = item_id;
-                        int res = dbWorker.WriteItem(newItem);
-                        cBot.setChatId(cModel.chatId);
-                        cBot.setMessage("https://www.avito.ru" + link);
-                        Console.WriteLine("Add new item " + link);
+                        Console.WriteLine("Can't parse page: " + page_counter);
+                        continue;
                     }
-                    else
+
+                    foreach (var item in item_list)
                     {
-                        db_dataList.RemoveAll(it => it.product_id == item_id);
+                        int? item_id = (item.GetAttribute("data-item-id") != null) ? Convert.ToInt32(item.GetAttribute("data-item-id")) : null;
+                        string link = item.QuerySelector("a[itemprop='url']").GetAttribute("href") ?? null;
+
+                        if (item_id == null || link == null)
+                        {
+                            Console.WriteLine("Can't parse item on: " + page_counter + " " + item.TagName);
+                            continue;
+                        }
+
+                        if (!db_dataList.Any(it => it.product_id == item_id))
+                        {
+                            AvitoDBModel newItem = new AvitoDBModel();
+                            newItem.link = link;
+                            newItem.product_id = (int)item_id;
+                            int res = dbWorker.WriteItem(newItem);
+                            cBot.setChatId(cModel.chatId);
+                            cBot.setMessage("https://www.avito.ru" + link);
+                            Console.WriteLine("Add new item " + link);
+                        }
+                        else
+                        {
+                            db_dataList.RemoveAll(it => it.product_id == item_id);
+                        }
+                        parce_counter++;
                     }
-                    parce_counter++;
+                    page_counter++;
                 }
-                page_counter++;
-            }
 
-            foreach(var item in db_dataList)
+                foreach (var item in db_dataList)
+                {
+                    dbWorker.RemoveItem(item.id);
+                    Console.WriteLine("Remove item " + item.link);
+                }
+
+                Console.WriteLine("Success!");
+            }
+            catch
             {
-                dbWorker.RemoveItem(item.id);
-                Console.WriteLine("Remove item " + item.link);
+                throw new Exception("Cant parse site");
             }
-
-            Console.WriteLine("Success!");
         }
     }
 }
