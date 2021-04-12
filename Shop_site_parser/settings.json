@@ -7,7 +7,8 @@
       "shopName": "Avito",
       "isEnable": true,
       "link": "https://www.avito.ru/obninsk/avtomobili/s_probegom?localPriority=1&radius=0",
-      "chatId": -543439119
+      "chatId": -543439119,
+      "dbName": "TestShopDB.db"
     }
   }
 

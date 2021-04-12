@@ -21,13 +21,11 @@ namespace Shop_site_parser
         static void Main(string[] args)
         {
 
-
             try
             {
                 Settings cSettings = new Settings();
-
-                AvitoShop ashhh = new AvitoShop(cSettings.getShopSettings("Avito"), "TestShopDB.db", cSettings.getBotToken());
-                ashhh.ParseSite();
+                AvitoShop cParsAevito = new AvitoShop(cSettings.getShopSettings("Avito"), cSettings.getBotToken());
+                cParsAevito.ParseSite();
             }
             catch (Exception ex)
             {

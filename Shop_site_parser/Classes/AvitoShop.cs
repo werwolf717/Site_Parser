@@ -18,10 +18,10 @@ namespace Shop_site_parser.Classes
         private AvitoDBworker dbWorker;
         private TelegramBot cBot;
 
-        public AvitoShop(ShopModel _cModel, string _dbName, string _token)
+        public AvitoShop(ShopModel _cModel, string _token)
         {
             cModel = _cModel;
-            dbWorker = new AvitoDBworker(_dbName);
+            dbWorker = new AvitoDBworker(_cModel.dbName);
             cBot = new TelegramBot(_token);
         }
         public bool GetCurrentOffer()

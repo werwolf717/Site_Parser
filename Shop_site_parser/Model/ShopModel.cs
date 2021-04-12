@@ -6,6 +6,7 @@
         public bool isEnable { get; set; }
         public string link { get; set; }
         public long chatId { get; set; }
+        public string dbName { get; set; }
     }
 
 }
