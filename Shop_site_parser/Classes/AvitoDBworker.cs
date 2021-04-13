@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SQLite;
 using Shop_site_parser.Interfaces;
 using Shop_site_parser.Model;
+using System.Linq;
 
 namespace Shop_site_parser.Classes
 {
@@ -22,7 +23,7 @@ namespace Shop_site_parser.Classes
 
                 lock (locker)
                 {
-                    // проверяем наличие нужной БД, если нет - создаем
+                    // проверяем наличие нужной таблицы в БД, если нет - создаем
                     if (database.ExecuteScalar<string>("SELECT name FROM sqlite_master WHERE type='table' AND name='Avito';") == null)
                         database.CreateTable<AvitoDBModel>();
                     else
@@ -48,6 +49,7 @@ namespace Shop_site_parser.Classes
         {
             lock (locker)
             {
+                //Список содержимого таблицы
                 return database.Table<AvitoDBModel>().ToList();
             }
         }
@@ -56,7 +58,49 @@ namespace Shop_site_parser.Classes
         {
             lock (locker)
             {
+                //Удаление по id
                 return database.Delete<AvitoDBModel>(_id);
+            }
+        }
+
+        public AvitoDBModel GetByItemID(int _product_id)
+        {
+            lock(locker)
+            {
+                return database.Find<AvitoDBModel>(it => it.product_id == _product_id);
+            }
+        }
+
+        public int ResetActualState()
+        {
+            lock (locker)
+            {
+                var items = database.Table<AvitoDBModel>().ToList();
+                foreach (var it in items)
+                {
+                    it.actual = false;
+                }
+                return database.UpdateAll(items);
+            }
+        }
+
+        public int UpdateItem(AvitoDBModel _updateItem)
+        {
+            lock (locker)
+            {
+                return database.Update(_updateItem);
+            }
+        }
+
+        public void ClearNonActual()
+        {
+            lock(locker)
+            {
+                var items = database.Table<AvitoDBModel>().ToList().Where(it => it.actual == false);
+                foreach (var item in items)
+                {
+                    database.Delete(item);
+                }
             }
         }
 
@@ -64,6 +108,7 @@ namespace Shop_site_parser.Classes
         {
             lock (locker)
             {
+                //Закрыть соединение
                 database.Close();
             }
         }

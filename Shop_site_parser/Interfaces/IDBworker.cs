@@ -4,5 +4,7 @@
     {
         int RemoveItem(int _id);
         void CloseDBConnection();
+        int ResetActualState();
+        void ClearNonActual();
     }
 }

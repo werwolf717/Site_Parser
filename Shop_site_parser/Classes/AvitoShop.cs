@@ -9,13 +9,13 @@ namespace Shop_site_parser.Classes
 {
     class AvitoShop : IShop
     {
-        private ShopModel cModel;
-        private List<AvitoDBModel> db_dataList;
-        private AvitoDBworker dbWorker;
-        private TelegramBot cBot;
+        private ShopModel cModel;                   //Настройки магазина
+        private AvitoDBworker dbWorker;             //Класс для работы с БД
+        private TelegramBot cBot;                   //Бот
 
         public AvitoShop(ShopModel _cModel, string _token)
         {
+            //Инициализация
             try
             {
                 cModel = _cModel;
@@ -32,20 +32,27 @@ namespace Shop_site_parser.Classes
         {
             try
             {
-                db_dataList = dbWorker.GetDataList();
+                dbWorker.ResetActualState(); //Сбрасываем значения актуальности
 
+                //Открываем первую страницу по ссылке с параметрами поиска. На Авито суммарный результат найденного хранится в span[data-marker='page-title/count']
                 var document = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link);
                 var result_count = (document.QuerySelector("span[data-marker='page-title/count']") != null)
                                     ? Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent) : 0;
 
-                int parce_counter = 0;
-                int page_counter = 1;
+                int parse_counter = 0;  //Счетчик найденных элементов
+                int page_counter = 1;   //Счетчик страниц
 
-                while (parce_counter < result_count)
+                while (parse_counter < result_count)
                 {
                     Console.WriteLine("Page: " + page_counter + "...");
+                    //Переход к конкретной странице
                     var page_documet = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link + "&p=" + page_counter);
 
+                    //Проверяем если количество изменилось
+                    result_count = page_documet.QuerySelector("span[data-marker='page-title/count']") == null
+                                    ? 0 : Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent);
+
+                    //Список нужных элементов
                     var item_list = (page_documet.QuerySelector("div[data-marker='catalog-serp']") != null) ? page_documet.QuerySelector("div[data-marker='catalog-serp']").Children
                     .Where(s => s.GetAttribute("data-marker") == "item").ToList() : null;
 
@@ -57,6 +64,7 @@ namespace Shop_site_parser.Classes
 
                     foreach (var item in item_list)
                     {
+                        //Ищем id и ссылку каждого элемента
                         int? item_id = (item.GetAttribute("data-item-id") != null) ? Convert.ToInt32(item.GetAttribute("data-item-id")) : null;
                         string link = item.QuerySelector("a[itemprop='url']").GetAttribute("href") ?? null;
 
@@ -66,11 +74,13 @@ namespace Shop_site_parser.Classes
                             continue;
                         }
 
-                        if (!db_dataList.Any(it => it.product_id == item_id))
+                        var find_item = dbWorker.GetByItemID((int)item_id);
+                        if (find_item == null)
                         {
                             AvitoDBModel newItem = new AvitoDBModel();
                             newItem.link = link;
                             newItem.product_id = (int)item_id;
+                            newItem.actual = true;
                             int res = dbWorker.WriteItem(newItem);
                             cBot.setChatId(cModel.chatId);
                             cBot.setMessage("https://www.avito.ru" + link);
@@ -78,18 +88,14 @@ namespace Shop_site_parser.Classes
                         }
                         else
                         {
-                            db_dataList.RemoveAll(it => it.product_id == item_id);
+                            find_item.actual = true;
+                            dbWorker.UpdateItem(find_item);
                         }
-                        parce_counter++;
+                        parse_counter++;
                     }
                     page_counter++;
                 }
-
-                foreach (var item in db_dataList)
-                {
-                    dbWorker.RemoveItem(item.id);
-                    Console.WriteLine("Remove item " + item.link);
-                }
+                dbWorker.ClearNonActual();
 
                 Console.WriteLine("Success!");
             }
