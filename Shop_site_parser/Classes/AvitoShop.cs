@@ -95,7 +95,7 @@ namespace Shop_site_parser.Classes
                         parse_counter++;
                     }
                     page_counter++;
-                }ы
+                }
                 dbWorker.ClearNonActual(); // Удаляем всё, что не актуально
 
                 Console.WriteLine("Success!");
