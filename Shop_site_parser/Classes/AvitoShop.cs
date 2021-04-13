@@ -65,7 +65,7 @@ namespace Shop_site_parser.Classes
                     if (item_list == null)
                     {
                         Console.WriteLine("Can't parse page: " + page_counter);
-                        continue;
+                        throw new Exception("Can't parse page");
                     }
 
                     foreach (var item in item_list)
