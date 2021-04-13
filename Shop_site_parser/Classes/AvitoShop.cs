@@ -88,14 +88,15 @@ namespace Shop_site_parser.Classes
                         }
                         else
                         {
+                            //Если такая позиция существует в базе -> подтверждаем актуальность
                             find_item.actual = true;
                             dbWorker.UpdateItem(find_item);
                         }
                         parse_counter++;
                     }
                     page_counter++;
-                }
-                dbWorker.ClearNonActual();
+                }ы
+                dbWorker.ClearNonActual(); // Удаляем всё, что не актуально
 
                 Console.WriteLine("Success!");
             }
