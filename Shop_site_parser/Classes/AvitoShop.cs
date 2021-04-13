@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using AngleSharp;
 using Shop_site_parser.Model;
+using AngleSharp.Io;
+using System.Net.Http;
 
 namespace Shop_site_parser.Classes
 {
@@ -28,16 +30,20 @@ namespace Shop_site_parser.Classes
             }
         }
 
-        public async void ParseSiteAsync()
+        public void ParseSite()
         {
             try
             {
                 dbWorker.ResetActualState(); //Сбрасываем значения актуальности
 
+                var requester = new DefaultHttpRequester();
+                requester.Headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36";
+                var config = Configuration.Default.With(requester).WithDefaultLoader();
+
                 //Открываем первую страницу по ссылке с параметрами поиска. На Авито суммарный результат найденного хранится в span[data-marker='page-title/count']
-                var document = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link);
-                var result_count = (document.QuerySelector("span[data-marker='page-title/count']") != null)
-                                    ? Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent) : 0;
+                var document = BrowsingContext.New(config).OpenAsync(cModel.link);
+                var result_count = (document.Result.QuerySelector("span[data-marker='page-title/count']") != null)
+                                    ? Convert.ToInt32(document.Result.QuerySelector("span[data-marker='page-title/count']").TextContent) : 0;
 
                 int parse_counter = 0;  //Счетчик найденных элементов
                 int page_counter = 1;   //Счетчик страниц
@@ -46,14 +52,14 @@ namespace Shop_site_parser.Classes
                 {
                     Console.WriteLine("Page: " + page_counter + "...");
                     //Переход к конкретной странице
-                    var page_documet = await BrowsingContext.New(Configuration.Default.WithDefaultLoader()).OpenAsync(cModel.link + "&p=" + page_counter);
+                    var page_documet = BrowsingContext.New(config).OpenAsync(cModel.link + "&p=" + page_counter);
 
                     //Проверяем если количество изменилось
-                    result_count = page_documet.QuerySelector("span[data-marker='page-title/count']") == null
-                                    ? 0 : Convert.ToInt32(document.QuerySelector("span[data-marker='page-title/count']").TextContent);
+                    result_count = page_documet.Result.QuerySelector("span[data-marker='page-title/count']") == null
+                                    ? 0 : Convert.ToInt32(document.Result.QuerySelector("span[data-marker='page-title/count']").TextContent);
 
                     //Список нужных элементов
-                    var item_list = (page_documet.QuerySelector("div[data-marker='catalog-serp']") != null) ? page_documet.QuerySelector("div[data-marker='catalog-serp']").Children
+                    var item_list = (page_documet.Result.QuerySelector("div[data-marker='catalog-serp']") != null) ? page_documet.Result.QuerySelector("div[data-marker='catalog-serp']").Children
                     .Where(s => s.GetAttribute("data-marker") == "item").ToList() : null;
 
                     if (item_list == null)
@@ -82,8 +88,8 @@ namespace Shop_site_parser.Classes
                             newItem.product_id = (int)item_id;
                             newItem.actual = true;
                             int res = dbWorker.WriteItem(newItem);
-                            cBot.setChatId(cModel.chatId);
-                            cBot.setMessage("https://www.avito.ru" + link);
+                           /* cBot.setChatId(cModel.chatId);
+                            cBot.setMessage("https://www.avito.ru" + link);*/
                             Console.WriteLine("Add new item " + link);
                         }
                         else

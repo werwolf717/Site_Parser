@@ -2,6 +2,6 @@
 {
     interface IShop
     {
-        void ParseSiteAsync();
+        void ParseSite();
     }
 }

@@ -25,7 +25,7 @@ namespace Shop_site_parser
             {
                 Settings cSettings = new Settings();
                 AvitoShop cParsAevito = new AvitoShop(cSettings.getShopSettings("Avito"), cSettings.getBotToken());
-                cParsAevito.ParseSiteAsync();
+                cParsAevito.ParseSite();
             }
             catch (Exception ex)
             {
